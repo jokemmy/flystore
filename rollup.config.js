@@ -1,5 +1,6 @@
 
 import nodeResolve from 'rollup-plugin-node-resolve';
+import builtins from 'rollup-plugin-node-builtins';
 import commonjs from 'rollup-plugin-commonjs';
 import replace from 'rollup-plugin-replace';
 import uglify from 'rollup-plugin-uglify';
@@ -10,6 +11,7 @@ const config = {
   name: 'whatitis',
   input: 'src/index.js',
   plugins: [
+    builtins(),
     nodeResolve({
       jsnext: true
     }),
