@@ -1,3 +1,19 @@
 # FlyStore
-公共存储空间，可分发异步加载的数据，适用于多处使用同一份后台数据的并发渲染
-**目前还是初步的设计**
+
+### options
+
+* namespace 命令空间
+
+```js
+  import fs from 'flystore';
+
+  const storeUp = fs( 'up' );
+  const storeDown = fs( 'down' );
+
+
+  storeUp.watch( 'down.goup', ( value ) => {
+    console.log( value ); // no
+  });
+
+  storeDown.dispense( 'goup', 'no' );
+```

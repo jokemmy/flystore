@@ -1,14 +1,21 @@
 
-import flystore from '../src/index';
+import fs from '../src/index';
 
 
 const {
   set, get, clear, getAll, wait, watch, dispense, dispatch, remove
-} = flystore({ initialState: { a: 1 }});
+} = fs({ namespace: 'namespace' });
 
-test( 'flystore `initialState`', () => {
-  const storedValue = get( 'a' );
-  expect( storedValue ).toEqual( 1 );
+
+test( 'flystoreA & flystoreB', () => {
+  let result = '';
+  const storeUp = fs( 'up' );
+  const storeDown = fs( 'down' );
+  storeUp.watch( 'down.goup', ( value ) => {
+    result += value;
+  });
+  storeDown.dispense( 'goup', 'no' );
+  expect( result ).toEqual( 'no' );
   clear();
 });
 

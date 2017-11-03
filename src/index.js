@@ -4,111 +4,171 @@ import invariant from 'invariant';
 import is from 'whatitis';
 
 
-/**
- * cache some values those use globally or will appear in future
- */
-
-function FlyStore() {
-
-  const uniqueID = Symbol( 'FlyStore' );
-
-  // create event handler
-  const emitter = new EventEmitter();
-  emitter.setMaxListeners( 1024 );
-
-  const flystore = {
-    [uniqueID]: new Map()
+function composeHash( func1, func2 ) {
+  return function( hash, ...args ) {
+    return func1( func2( hash ), ...args );
   };
+}
 
-  function getCollection() {
-    return flystore[uniqueID];
+function compose( func1, func2 ) {
+  return function( ...args ) {
+    return func1( func2( ...args ));
+  };
+}
+
+const cache = {};
+
+// create event handler
+const emitter = new EventEmitter();
+emitter.setMaxListeners( 2048 );
+
+const uniqueID = Symbol( 'FlyStore' );
+
+function getOptions( options ) {
+  if ( is.String( options )) {
+    return {
+      namespace: options
+    };
+  }
+  return options;
+}
+
+function FlyStore({ namespace, initialState }) {
+
+  const flystore = {};
+
+  if ( is.String( namespace ) && namespace ) {
+    cache[namespace] = flystore;
   }
 
-  function setCollection( newCollection = new Map()) {
-    flystore[uniqueID] = newCollection;
+  function keyCheck( key ) {
+    invariant(
+      is.String( key ) && key,
+      'FlyStore: Expecting key is a non-empty string'
+    );
+    return key;
   }
 
-  function set( key, value ) {
-    getCollection().set( key, value );
+  function getNameSpace( hash ) {
+    const [ ns, key ] = keyCheck( hash ).split( '.' );
+    return key ? ns : '';
   }
 
-  function get( key ) {
-    return getCollection().get( key );
+  function getKey( hash ) {
+    const [ ns, key ] = hash.split( '.' );
+    return key || ns;
+  }
+
+  function getHash( key ) {
+    const ns = getNameSpace( key );
+    return ns ? key : namespace ? `${namespace}.${key}` : key;
+  }
+
+  function getStore( hash ) {
+    const ns = getNameSpace( hash );
+    return ns ? cache[ns] : flystore;
+  }
+
+  function getCollection( hash ) {
+    return hash ? getStore( hash )[uniqueID] : flystore[uniqueID];
+  }
+
+  function newCollection( initialState ) {
+    if ( is.PlainObject( initialState )) {
+      flystore[uniqueID] = new Map( Object.entries( initialState ));
+    } else {
+      flystore[uniqueID] = new Map();
+    }
+  }
+
+  function set( hash, value ) {
+    getCollection( hash ).set( getKey( hash ), value );
+  }
+
+  function get( hash ) {
+    return getCollection( hash ).get( getKey( hash ));
   }
 
   function getAll() {
     return [...getCollection()];
   }
 
-  function wait( key, callback, always ) {
+  function wait( hash, callback, always ) {
 
-    invariant(
-      is.Defined( key ),
-      'FlyStore: Expecting key is a non-empty string'
-    );
+    keyCheck( hash );
 
     invariant(
       is.Function( callback ),
       'FlyStore: Expecting callback is a function'
     );
 
-    const value = get( key );
+    const value = get( hash );
 
     function clear() {
-      emitter.removeListener( key, handle ); // eslint-disable-line
+      emitter.removeListener( hash, handle ); // eslint-disable-line
     }
 
-    function handle() {
-      callback( get( key ), clear );
+    function handle( arg ) {
+      if ( arg ) {
+        callback( arg );
+      } else {
+        callback( get( hash ), clear );
+      }
     }
 
     if ( always ) {
-      emitter.on( key, handle );
+      emitter.on( hash, handle );
     } else if ( value !== undefined ) {
       callback( value, clear );
     } else {
-      emitter.once( key, handle );
+      emitter.once( hash, handle );
     }
 
-    return { key, clear };
+    return { hash, clear };
   }
 
-  function watch( key, callback ) {
-    return wait( key, callback, true );
+  function watch( hash, callback ) {
+    return wait( hash, callback, true );
   }
 
-  function dispense( key, value ) {
-    if ( key ) {
+  function dispense( hash, value ) {
+    if ( keyCheck( hash )) {
       if ( value !== undefined ) {
-        set( key, value );
+        set( hash, value );
       }
-      emitter.emit( key );
+      emitter.emit( hash );
+    }
+  }
+
+  function dispatch( action ) {
+    if ( keyCheck( action.type )) {
+      emitter.emit( getHash( action.type ), action );
     }
   }
 
   function clear() {
-    setCollection();
+    newCollection();
+    emitter.removeAllListeners();
   }
 
-  function remove( key ) {
-    return getCollection().delete( key );
+  function remove( hash ) {
+    return getCollection( keyCheck( hash )).delete( getKey( hash ));
   }
 
-  // const subscribe = watch;
-  // const publish = watch;
+  // init
+  newCollection( initialState );
 
   return Object.assign( flystore, {
     set,
     get,
     getAll,
-    wait,
-    watch,
-    dispense,
-    remove,
+    wait: composeHash( wait, getHash ),
+    watch: composeHash( watch, getHash ),
+    dispense: composeHash( dispense, getHash ),
+    dispatch,
+    remove: composeHash( remove, getHash ),
     clear
-    // subscribe,
-    // publish,
   });
 }
 
-export default FlyStore;
+export default compose( FlyStore, getOptions );
