@@ -171,4 +171,19 @@ function FlyStore({ namespace, initialState }) {
   });
 }
 
-export default compose( FlyStore, getOptions );
+export default Object.assign( compose( FlyStore, getOptions ), {
+  clearCache( namespace ) { // eslint-disable-line
+    if ( is.String( namespace ) && namespace ) {
+      delete cache[namespace];
+    } else {
+      Object.keys( cache ).forEach(( namespace ) => {
+        delete cache[namespace];
+      });
+    }
+  },
+  getCache( namespace ) { // eslint-disable-line
+    if ( is.String( namespace ) && namespace ) {
+      return cache[namespace];
+    }
+  }
+});
