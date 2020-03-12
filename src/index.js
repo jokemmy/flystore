@@ -131,6 +131,15 @@ function FlyStore({ namespace, initialState }) {
     return wait( hash, callback, true );
   }
 
+  function waitAndWatch( hash, callback ) {
+    let waiter;
+    waiter = wait( hash, ( args ) => {
+      waiter = watch( hash, callback );
+      callback( args );
+    });
+    return { hash, clear: () => waiter.clear() };
+  }
+
   function dispense( hash, value ) {
     if ( keyCheck( hash )) {
       if ( value !== undefined ) {
@@ -164,6 +173,7 @@ function FlyStore({ namespace, initialState }) {
     getAll,
     wait: composeHash( wait, getHash ),
     watch: composeHash( watch, getHash ),
+    waitAndWatch: composeHash( waitAndWatch, getHash ),
     dispense: composeHash( dispense, getHash ),
     dispatch,
     remove: composeHash( remove, getHash ),
