@@ -66,7 +66,7 @@ function FlyStore({ namespace, initialState }) {
 
   function getStore( hash ) {
     const ns = getNameSpace( hash );
-    return ns ? cache[ns] : flystore;
+    return ns ? ( cache[ns] || flystore ) : flystore;
   }
 
   function getCollection( hash ) {
