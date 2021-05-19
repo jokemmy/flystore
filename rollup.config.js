@@ -1,29 +1,26 @@
 
 import nodeResolve from 'rollup-plugin-node-resolve';
-import builtins from 'rollup-plugin-node-builtins';
 import commonjs from 'rollup-plugin-commonjs';
 import replace from 'rollup-plugin-replace';
-import uglify from 'rollup-plugin-uglify';
+import { uglify } from 'rollup-plugin-uglify';
 import babel from 'rollup-plugin-babel';
 
 const env = process.env.NODE_ENV;
 const config = {
-  name: 'flystore',
   input: 'src/index.js',
+  output: {
+    name: 'flystore',
+    format: 'umd',
+    file: './dist/flystore.js'
+  },
+  context: 'this',
   plugins: [
-    builtins(),
-    nodeResolve({
-      jsnext: true
-    }),
+    nodeResolve(),
     babel({
-      plugins: [
-        'external-helpers'
-      ],
+      runtimeHelpers: true,
       exclude: 'node_modules/**'
     }),
-    commonjs({
-      include: 'node_modules/**'
-    }),
+    commonjs(),
     replace({
       'process.env.NODE_ENV': JSON.stringify( env )
     })
@@ -37,7 +34,7 @@ if ( env === 'production' ) {
         pure_getters: true,
         unsafe: true,
         unsafe_comps: true,
-        warnings: false
+        // warnings: false
       }
     })
   );
