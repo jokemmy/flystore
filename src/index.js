@@ -110,7 +110,7 @@ function FlyStore({ namespace, initialState }) {
 
     function handle( arg ) {
       if ( arg ) {
-        callback( arg );
+        callback( arg, clear );
       } else {
         callback( get( hash ), clear );
       }
