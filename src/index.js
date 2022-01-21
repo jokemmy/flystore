@@ -133,9 +133,9 @@ function FlyStore({ namespace, initialState }) {
 
   function waitAndWatch( hash, callback ) {
     let waiter;
-    waiter = wait( hash, ( args ) => {
+    waiter = wait( hash, ( args, clear ) => {
       waiter = watch( hash, callback );
-      callback( args );
+      callback( args, clear );
     });
     return { hash, clear: () => waiter.clear() };
   }
