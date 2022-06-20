@@ -77,7 +77,7 @@ function FlyStore({ namespace, initialState }) {
     if ( is.PlainObject( initialState )) {
       flystore[uniqueID] = new Map( Object.entries( initialState ));
     } else {
-      flystore[uniqueID] = new Map();
+      flystore[uniqueID] = new Map([]);
     }
   }
 
@@ -160,6 +160,10 @@ function FlyStore({ namespace, initialState }) {
     emitter.removeAllListeners();
   }
 
+  function clearCache( fromInitialState ) {
+    newCollection( fromInitialState ? initialState : null );
+  }
+
   function remove( hash ) {
     return getCollection( keyCheck( hash )).delete( getKey( hash ));
   }
@@ -177,6 +181,7 @@ function FlyStore({ namespace, initialState }) {
     dispense: composeHash( dispense, getHash ),
     dispatch,
     remove: composeHash( remove, getHash ),
+    clearCache,
     clear
   });
 }
